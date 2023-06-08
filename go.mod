@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/ClickHouse/clickhouse-go v1.5.4
 	github.com/joho/godotenv v1.5.1
+	github.com/montanaflynn/stats v0.7.1
 	github.com/spf13/cobra v1.7.0
 )
 
