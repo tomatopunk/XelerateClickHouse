@@ -19,10 +19,11 @@
 package pkg
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/spf13/cobra"
 )
 
@@ -42,27 +43,27 @@ func init() {
 }
 
 func descClickhouse() error {
-	db, err := sql.Open("clickhouse", clickhouseURL)
+	conn, err := getConn(os.Getenv("CLICKHOUSE_URL"))
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer conn.Close()
 
 	// Get create table SQL
-	createTableQuery, err := getCreateTableSQL(db)
+	createTableQuery, err := getCreateTableSQL(conn)
 	if err != nil {
 		return err
 	}
 
 	// Get partition information
-	partitions, err := getPartitionsInfo(db)
+	partitions, err := getPartitionsInfo(conn)
 	if err != nil {
 		return err
 	}
 
 	// Print the description
 	fmt.Printf("Description <%s>\n\n", tableName)
-	fmt.Printf("Clickhouse URL: %s\n\n", clickhouseURL)
+	fmt.Printf("Clickhouse URL: %s\n\n", os.Getenv("CLICKHOUSE_URL"))
 	fmt.Printf("Create Table SQL:\n\n%s\n\n", createTableQuery)
 	fmt.Println("Partition:")
 	for i, partition := range partitions {
@@ -115,9 +116,9 @@ func printPartitionAggregation(partitions []PartitionInfo) {
 	}
 }
 
-func getPartitionsInfo(db *sql.DB) ([]PartitionInfo, error) {
+func getPartitionsInfo(conn driver.Conn) ([]PartitionInfo, error) {
 	query := fmt.Sprintf("SELECT partition, disk_name, sum(rows) AS total_row, sum(bytes_on_disk) AS all_disk FROM system.parts WHERE active AND database = '%s' AND partition != '19700101' AND table = '%s' GROUP BY partition, disk_name ORDER BY partition", databaseName, tableName)
-	rows, err := db.Query(query)
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
 	}
@@ -141,9 +142,9 @@ func getPartitionsInfo(db *sql.DB) ([]PartitionInfo, error) {
 	return partitions, nil
 }
 
-func getCreateTableSQL(db *sql.DB) (string, error) {
+func getCreateTableSQL(conn driver.Conn) (string, error) {
 	query := fmt.Sprintf("SELECT name AS table, create_table_query FROM system.tables WHERE database = '%s' AND (engine = 'ReplicatedMergeTree' OR engine = 'ReplicatedReplacingMergeTree')", databaseName)
-	rows, err := db.Query(query)
+	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
 		return "", err
 	}

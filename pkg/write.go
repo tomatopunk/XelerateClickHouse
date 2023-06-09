@@ -59,7 +59,7 @@ func init() {
 }
 
 func writeToClickhouse() error {
-	db, err := sql.Open("clickhouse", clickhouseURL)
+	db, err := sql.Open("clickhouse", os.Getenv("CLICKHOUSE_URL"))
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func writeToClickhouse() error {
 	completeRequests := totalRecords / writeOpt.size
 
 	// Print benchmarking results
-	fmt.Printf("ClickHouse URL: %s\n", clickhouseURL)
+	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
 	fmt.Printf("Benckmarking Bucket Count : %d\n", writeOpt.bucketCount)
 	fmt.Printf("Benckmarking Size : %d\n", writeOpt.size)
 	fmt.Printf("Benckmarking Bucket Unit : %s\n", writeOpt.bucketUnit)

@@ -52,14 +52,14 @@ var readCommand = &cobra.Command{
 func init() {
 	root.AddCommand(readCommand)
 
-	writeCommand.Flags().IntVar(&readOpt.bucketCount, "b", 1, "bucket count like 30")
-	writeCommand.Flags().IntVar(&readOpt.size, "n", 10, "bucket size like 100")
-	writeCommand.Flags().IntVar(&readOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
+	readCommand.Flags().IntVar(&readOpt.bucketCount, "b", 1, "bucket count like 30")
+	readCommand.Flags().IntVar(&readOpt.size, "n", 10, "bucket size like 100")
+	readCommand.Flags().IntVar(&readOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
 
 }
 
 func benchmarkReadQueries() error {
-	db, err := sql.Open("clickhouse", clickhouseURL)
+	db, err := sql.Open("clickhouse", os.Getenv("CLICKHOUSE_URL"))
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func benchmarkReadQueries() error {
 
 	// Print benchmarking results
 	fmt.Printf("\n\n")
-	fmt.Printf("ClickHouse URL: %s\n", clickhouseURL)
+	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
 	fmt.Printf("Concurrency Level: %d\n", readOpt.bucketCount)
 	fmt.Printf("Total queries executed: %d\n", readOpt.bucketCount*readOpt.size)
 	fmt.Printf("Failed requests: %d\n", failedRequests)
