@@ -19,11 +19,10 @@
 package pkg
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"log"
 	"os"
-	"sync"
+	"sort"
 	"time"
 
 	"github.com/montanaflynn/stats"
@@ -31,9 +30,10 @@ import (
 )
 
 type readOption struct {
-	bucketCount      int // bucket count like 30
-	size             int // bucket size like 100
-	concurrencyLevel int //concurrency level like 1
+	startTime string
+	endTime   string
+	timeStep  string
+	sql       string
 }
 
 var readOpt readOption
@@ -52,80 +52,114 @@ var readCommand = &cobra.Command{
 func init() {
 	root.AddCommand(readCommand)
 
-	readCommand.Flags().IntVar(&readOpt.bucketCount, "b", 1, "bucket count like 30")
-	readCommand.Flags().IntVar(&readOpt.size, "n", 10, "bucket size like 100")
-	readCommand.Flags().IntVar(&readOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
+	readCommand.Flags().StringVar(&readOpt.startTime, "start", "2023-06-09 18:00:00", "start time")
+	readCommand.Flags().StringVar(&readOpt.endTime, "end", "2023-06-09 19:00:00", "end time")
+	readCommand.Flags().StringVar(&readOpt.timeStep, "step", "minute", "time step")
+	readCommand.Flags().StringVar(&readOpt.sql, "sql", "select * from test.metrics", "sql")
 
 }
 
 func benchmarkReadQueries() error {
-	db, err := sql.Open("clickhouse", os.Getenv("CLICKHOUSE_URL"))
+	// Parse start and end times
+	startTime, err := time.Parse("2006-01-02 15:04:05", readOpt.startTime)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-
-	// Execute read queries concurrently and measure their execution time
-	results := make([][]float64, readOpt.bucketCount)
-	var wg sync.WaitGroup
-	wg.Add(readOpt.bucketCount)
-
-	failedRequests := 0
-
-	totalStart := time.Now()
-
-	for i := 0; i < readOpt.bucketCount; i++ {
-		go func(bucketIndex int) {
-			defer wg.Done()
-
-			bucketResults := make([]float64, readOpt.size)
-
-			for j := 0; j < readOpt.size; j++ {
-				start := time.Now().Add(time.Duration(bucketIndex) * time.Duration(readOpt.size) * time.Minute)
-				end := start.Add(time.Duration(readOpt.size) * time.Minute)
-
-				query := fmt.Sprintf("SELECT * FROM %s.%s WHERE timestamp >= '%s' AND timestamp < '%s' LIMIT 100", databaseName, tableName, start.Format("2006-01-02 15:04:05"), end.Format("2006-01-02 15:04:05"))
-				startTime := time.Now()
-				_, err := db.Exec(query)
-				elapsedTime := time.Since(startTime)
-
-				if err != nil {
-					log.Printf("Error executing query: %v", err)
-					failedRequests++
-				}
-
-				bucketResults[j] = elapsedTime.Seconds()
-			}
-
-			results[bucketIndex] = bucketResults
-		}(i)
+	endTime, err := time.Parse("2006-01-02 15:04:05", readOpt.endTime)
+	if err != nil {
+		return err
 	}
 
-	// Wait for all queries to complete
-	wg.Wait()
-
-	totalTime := time.Since(totalStart)
-
-	for i, bucketResults := range results {
-		p50, _ := stats.Percentile(bucketResults, 50)
-		p80, _ := stats.Percentile(bucketResults, 80)
-		p99, _ := stats.Percentile(bucketResults, 99)
-		p999, _ := stats.Percentile(bucketResults, 99.9)
-
-		start := time.Now().Add(time.Duration(i) * time.Duration(readOpt.size) * time.Minute)
-		end := start.Add(time.Duration(readOpt.size) * time.Minute)
-
-		fmt.Printf("Start %d: %s, End %d: %s, p50: %v,p80: %v, p99: %v, p999: %v\n", i+1, start, i+1, end, p50, p80, p99, p999)
+	// Calculate the number of iterations based on the time step
+	var duration time.Duration
+	switch readOpt.timeStep {
+	case "day":
+		duration = 24 * time.Hour
+	case "hour":
+		duration = time.Hour
+	case "minute":
+		duration = time.Minute
+	case "second":
+		duration = time.Second
+	default:
+		return fmt.Errorf("invalid time step: %s", readOpt.timeStep)
 	}
+
+	iterations := int(endTime.Sub(startTime) / duration)
+	failedQuery := 0
+	taskStart := time.Now()
+
+	// Construct time condition
+	timeCondition := fmt.Sprintf("timestamp > '%s' AND timestamp < '%s'", startTime.Format("2006-01-02 15:04:05"), endTime.Format("2006-01-02 15:04:05"))
+
+	conn, err := getConn(os.Getenv("CLICKHOUSE_URL"))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	results := make(map[int]float64)
+
+	for i := 1; i <= iterations; i++ {
+		t := startTime.Add(duration * time.Duration(i))
+		query := fmt.Sprintf("%s AND timestamp = '%s'", timeCondition, t.Format("2006-01-02 15:04:05"))
+		start := time.Now()
+		fmt.Println("debug!!", query)
+		rows, err := conn.Query(context.Background(), readOpt.sql+" WHERE "+query)
+		if err != nil {
+			failedQuery++
+			return err
+		}
+		defer rows.Close()
+
+		// Calculate query elapsed time
+		elapsed := time.Since(start).Seconds()
+		results[i] = elapsed
+	}
+
+	totalTime := time.Since(taskStart)
+
+	printResults(results)
+
+	bucketSlice := mapToSlice(results)
+
+	p50, _ := stats.Percentile(bucketSlice, 50)
+	p80, _ := stats.Percentile(bucketSlice, 80)
+	p99, _ := stats.Percentile(bucketSlice, 99)
+	p999, _ := stats.Percentile(bucketSlice, 99.9)
+
+	fmt.Printf("p50: %v, p80: %v, p99: %v, p999: %v\n", p50, p80, p99, p999)
 
 	// Print benchmarking results
 	fmt.Printf("\n\n")
 	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
-	fmt.Printf("Concurrency Level: %d\n", readOpt.bucketCount)
-	fmt.Printf("Total queries executed: %d\n", readOpt.bucketCount*readOpt.size)
-	fmt.Printf("Failed requests: %d\n", failedRequests)
+	fmt.Printf("Total queries executed: %d\n", iterations)
+	fmt.Printf("Failed requests: %d\n", failedQuery)
 	fmt.Printf("Time taken for tests: %v\n", totalTime)
-	fmt.Printf("Total transferred: N/A\n") // Calculate and print if needed
 
 	return nil
+}
+
+func mapToSlice(results map[int]float64) []float64 {
+	slice := make([]float64, 0, len(results))
+
+	for _, value := range results {
+		slice = append(slice, value)
+	}
+
+	return slice
+}
+
+func printResults(results map[int]float64) {
+	keys := make([]int, 0, len(results))
+	for key := range results {
+		keys = append(keys, key)
+	}
+
+	sort.Ints(keys)
+
+	for _, bucket := range keys {
+		bucketResults := results[bucket]
+		fmt.Printf("bucket: %v, elapsed: %v\n", bucket, bucketResults)
+	}
 }
