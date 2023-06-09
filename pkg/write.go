@@ -22,16 +22,14 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
 )
 
 type WriteOption struct {
-	bucketCount      int // bucket count like 30
-	size             int // bucket size like 100
-	concurrencyLevel int //concurrency level like 1
+	bucketCount int // bucket count like 30
+	size        int // bucket size like 100
 }
 
 var writeOpt WriteOption
@@ -51,7 +49,6 @@ func init() {
 	root.AddCommand(writeCommand)
 	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 3, "bucket count like 30")
 	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
-	writeCommand.Flags().IntVar(&writeOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
 }
 
 func writeToClickhouse() error {
@@ -74,41 +71,28 @@ func writeToClickhouse() error {
 
 	debugInfo := NewDebugAppendMetrics()
 
-	// Generate and insert data concurrently
-	var wg sync.WaitGroup
-	wg.Add(writeOpt.concurrencyLevel)
+	// Generate data for each bucket
+	for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
+		timestamp := startTime.Add(time.Duration(bucket) * time.Second)
 
-	for i := 0; i < writeOpt.concurrencyLevel; i++ {
-		go func() {
-			defer wg.Done()
-
-			// Generate data for each bucket
-			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
-				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
-
-				// Generate metrics data
-				for j := 0; j < writeOpt.size; j++ {
-					//t := timestamp.Add(time.Duration(j) * time.Second)
-					t := timestamp
-					metric := generateMetric(t)
-					err := batch.AppendStruct(&metric)
-					if debugFlag {
-						debugInfo.Add(metric)
-					}
-
-					if err != nil {
-						if debugFlag {
-							fmt.Printf("append is failed: %v", err)
-						}
-						failedRequests++
-					}
-				}
+		// Generate metrics data
+		for j := 0; j < writeOpt.size; j++ {
+			//t := timestamp.Add(time.Duration(j) * time.Second)
+			t := timestamp
+			metric := generateMetric(t)
+			err := batch.AppendStruct(&metric)
+			if debugFlag {
+				debugInfo.Add(metric)
 			}
-		}()
-	}
 
-	// Wait for all goroutines to finish
-	wg.Wait()
+			if err != nil {
+				if debugFlag {
+					fmt.Printf("append is failed: %v", err)
+				}
+				failedRequests++
+			}
+		}
+	}
 
 	// Send the batch for execution
 	if debugFlag {
@@ -129,7 +113,6 @@ func writeToClickhouse() error {
 	fmt.Printf("Benchmarking Bucket Count: %d\n", writeOpt.bucketCount)
 	fmt.Printf("Benchmarking Size: %d\n", writeOpt.size)
 	fmt.Printf("Benchmarking Bucket Unit: %s\n", "Seconds")
-	fmt.Printf("Concurrency Level: %d\n", writeOpt.concurrencyLevel)
 	fmt.Printf("\n")
 
 	fmt.Printf("Time taken for tests: %v\n", elapsedTime)
