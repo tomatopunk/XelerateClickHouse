@@ -49,8 +49,8 @@ var writeCommand = &cobra.Command{
 
 func init() {
 	root.AddCommand(writeCommand)
-	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 1, "bucket count like 30")
-	writeCommand.Flags().IntVar(&writeOpt.size, "n", 10, "bucket size like 100")
+	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 3, "bucket count like 30")
+	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
 	writeCommand.Flags().IntVar(&writeOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
 }
 
@@ -72,24 +72,33 @@ func writeToClickhouse() error {
 	failedRequests := 0
 	startTime := time.Now()
 
+	debugInfo := NewDebugAppendMetrics()
+
 	// Generate and insert data concurrently
 	var wg sync.WaitGroup
 	wg.Add(writeOpt.concurrencyLevel)
-	now := time.Now()
 
 	for i := 0; i < writeOpt.concurrencyLevel; i++ {
 		go func() {
 			defer wg.Done()
 
 			// Generate data for each bucket
-			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
-				timestamp := now.Add(time.Duration(bucket) * time.Second)
+			for bucket := 0; bucket < writeOpt.size; bucket++ {
+				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
 
 				// Generate metrics data
-				for j := 0; j < writeOpt.size; j++ {
-					metrics := generateMetrics(timestamp)
-					err := batch.AppendStruct(&metrics)
+				for j := 0; j < writeOpt.bucketCount; j++ {
+					t := timestamp.Add(time.Duration(j) * time.Second)
+					metric := generateMetric(t)
+					err := batch.AppendStruct(&metric)
+					if debugFlag {
+						debugInfo.Add(metric)
+					}
+
 					if err != nil {
+						if debugFlag {
+							fmt.Printf("append is failed: %v", err)
+						}
 						failedRequests++
 					}
 				}
@@ -101,9 +110,13 @@ func writeToClickhouse() error {
 	wg.Wait()
 
 	// Send the batch for execution
-	err = batch.Send()
-	if err != nil {
-		fmt.Printf("Failed to send batch: %v\n", err)
+	if debugFlag {
+		debugInfo.Printf()
+	} else {
+		err = batch.Send()
+		if err != nil {
+			fmt.Printf("Failed to send batch: %v\n", err)
+		}
 	}
 
 	// Perform benchmarking calculations
@@ -114,6 +127,7 @@ func writeToClickhouse() error {
 	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
 	fmt.Printf("Benchmarking Bucket Count: %d\n", writeOpt.bucketCount)
 	fmt.Printf("Benchmarking Size: %d\n", writeOpt.size)
+	fmt.Printf("Benchmarking Write Total: %v\n", writeOpt.bucketCount*writeOpt.size)
 	fmt.Printf("Benchmarking Bucket Unit: %s\n", "Seconds")
 	fmt.Printf("Concurrency Level: %d\n", writeOpt.concurrencyLevel)
 	fmt.Printf("\n\n")

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type Metrics struct {
+type Metric struct {
 	Timestamp         time.Time `ch:"timestamp"`
 	MetricGroup       string    `ch:"metric_group"`
 	NumberFieldKeys   []string  `ch:"number_field_keys"`
@@ -16,8 +16,8 @@ type Metrics struct {
 }
 
 // generateMetrics generates a random Metrics object with the given timestamp
-func generateMetrics(timestamp time.Time) Metrics {
-	return Metrics{
+func generateMetric(timestamp time.Time) Metric {
+	return Metric{
 		Timestamp:         timestamp,
 		MetricGroup:       "sample_metric_group",
 		NumberFieldKeys:   []string{"number_field_key_1", "number_field_key_2"},

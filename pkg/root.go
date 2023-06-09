@@ -31,6 +31,12 @@ var root = &cobra.Command{
 	Long:  ``,
 }
 
+var debugFlag bool
+
+func init() {
+	root.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Enable debug mode")
+}
+
 func Execute() {
 	if err := root.Execute(); err != nil {
 		fmt.Println(err)
