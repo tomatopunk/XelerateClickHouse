@@ -7,12 +7,12 @@ CREATE TABLE IF NOT EXISTS test.metrics ON CLUSTER '{cluster}'
     `string_field_keys`   Array(LowCardinality(String)),
     `string_field_values` Array(String),
     `tag_keys`            Array(LowCardinality(String)),
-    `tag_values`          Array(LowCardinality(String)),
+    `tag_values`          Array(LowCardinality(String))
 )
-ENGINE = ReplicatedMergeTree('/clickhouse/tables/{cluster}-{shard}/{database}/metrics', '{replica}')
-PARTITION BY toYYYYMMDD(timestamp)
+ENGINE = ReplicatedMergeTree('/clickhouse/tables/{cluster}-{shard}/{database}/test-metrics', '{replica}')
+PARTITION BY toYYYYMMDDhhmmss(timestamp)
 ORDER BY (metric_group, timestamp)
-TTL toDateTime(timestamp) + INTERVAL 7 DAY;
+TTL toDateTime(timestamp) + INTERVAL 1 HOUR;
 
 CREATE TABLE IF NOT EXISTS test.metrics_all ON CLUSTER '{cluster}' AS test.metrics
 ENGINE = Distributed('{cluster}', test, metrics, rand());

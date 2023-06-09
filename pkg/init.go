@@ -19,12 +19,13 @@
 package pkg
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/spf13/cobra"
 )
 
@@ -44,26 +45,19 @@ func init() {
 }
 
 func initClickhouse() error {
-	// Read ClickHouse connection information from environment variables
-	clickHouseURL := os.Getenv("CLICKHOUSE_URL")
-	if clickHouseURL == "" {
-		return fmt.Errorf("CLICKHOUSE_URL environment variable is not set")
-	}
-
-	// Connect to ClickHouse database
-	db, err := sql.Open("clickhouse", clickHouseURL)
+	conn, err := getConn(os.Getenv("CLICKHOUSE_URL"))
 	if err != nil {
 		return fmt.Errorf("failed to connect to ClickHouse: %v", err)
 	}
-	defer db.Close()
+	defer conn.Close()
 
 	// Create the database
-	if err := executeSQLFile(db, "scripts/test_database.sql"); err != nil {
+	if err := executeSQLFile(conn, "scripts/test_database.sql"); err != nil {
 		return fmt.Errorf("failed to create database: %v", err)
 	}
 
 	// Create the tables
-	if err := executeSQLFile(db, "scripts/test_tables.sql"); err != nil {
+	if err := executeSQLFile(conn, "scripts/test_table.sql"); err != nil {
 		return fmt.Errorf("failed to create tables: %v", err)
 	}
 
@@ -72,7 +66,7 @@ func initClickhouse() error {
 	return nil
 }
 
-func executeSQLFile(db *sql.DB, filePath string) error {
+func executeSQLFile(conn driver.Conn, filePath string) error {
 	// Read the content of the SQL file
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -89,9 +83,9 @@ func executeSQLFile(db *sql.DB, filePath string) error {
 			continue // Skip empty statements
 		}
 
-		_, err := db.Exec(trimmedStatement)
+		err := conn.Exec(context.Background(), trimmedStatement)
 		if err != nil {
-			return fmt.Errorf("failed to execute SQL statement: %v", err)
+			return fmt.Errorf("failed to execute SQL statement: %v ,sql: %v", err, trimmedStatement)
 		}
 	}
 

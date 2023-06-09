@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"os"
 	"time"
 
 	ck "github.com/ClickHouse/clickhouse-go/v2"
@@ -11,9 +12,8 @@ func getConn(addr string) (driver.Conn, error) {
 	options := &ck.Options{
 		Addr: []string{addr},
 		Auth: ck.Auth{
-			//Database: databaseName,
-			Username: "",
-			Password: "",
+			Username: os.Getenv("CLICKHOUSE_USER"),
+			Password: os.Getenv("CLICKHOUSE_PASSWORD"),
 		},
 		DialTimeout:     getDurationEnv("DIAL_TIME_OUT", 10*time.Second),
 		Debug:           getBoolEnv("DEBUG", false),
