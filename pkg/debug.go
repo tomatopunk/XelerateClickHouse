@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -24,7 +25,30 @@ func (dam *DebugAppendMetrics) Add(metric Metric) {
 }
 
 func (dam *DebugAppendMetrics) Printf() {
-	for k, count := range dam.distributeInfo {
-		fmt.Printf("Timestamp: %v, Count: %d\n", k, count)
+	// Create a temporary slice for sorting
+	temp := make([]struct {
+		timestamp time.Time
+		count     int
+	}, 0, len(dam.distributeInfo))
+
+	// Store timestamps and counts in the temporary slice
+	for k, v := range dam.distributeInfo {
+		temp = append(temp, struct {
+			timestamp time.Time
+			count     int
+		}{
+			timestamp: k,
+			count:     v,
+		})
+	}
+
+	// Sort by timestamps
+	sort.Slice(temp, func(i, j int) bool {
+		return temp[i].timestamp.Before(temp[j].timestamp)
+	})
+
+	// Print timestamps and counts in ascending order
+	for _, entry := range temp {
+		fmt.Printf("Timestamp: %v, Count: %d\n", entry.timestamp, entry.count)
 	}
 }

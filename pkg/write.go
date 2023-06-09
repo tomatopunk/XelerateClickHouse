@@ -49,8 +49,8 @@ var writeCommand = &cobra.Command{
 
 func init() {
 	root.AddCommand(writeCommand)
-	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 3, "bucket count like 30")
-	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
+	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 2, "bucket count like 30")
+	writeCommand.Flags().IntVar(&writeOpt.size, "n", 2, "bucket size like 100")
 	writeCommand.Flags().IntVar(&writeOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
 }
 
@@ -83,11 +83,11 @@ func writeToClickhouse() error {
 			defer wg.Done()
 
 			// Generate data for each bucket
-			for bucket := 0; bucket < writeOpt.size; bucket++ {
+			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
 				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
 
 				// Generate metrics data
-				for j := 0; j < writeOpt.bucketCount; j++ {
+				for j := 0; j < writeOpt.size; j++ {
 					t := timestamp.Add(time.Duration(j) * time.Second)
 					metric := generateMetric(t)
 					err := batch.AppendStruct(&metric)
@@ -112,11 +112,11 @@ func writeToClickhouse() error {
 	// Send the batch for execution
 	if debugFlag {
 		debugInfo.Printf()
-	} else {
-		err = batch.Send()
-		if err != nil {
-			fmt.Printf("Failed to send batch: %v\n", err)
-		}
+		return nil
+	}
+	err = batch.Send()
+	if err != nil {
+		fmt.Printf("Failed to send batch: %v\n", err)
 	}
 
 	// Perform benchmarking calculations
@@ -127,10 +127,9 @@ func writeToClickhouse() error {
 	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
 	fmt.Printf("Benchmarking Bucket Count: %d\n", writeOpt.bucketCount)
 	fmt.Printf("Benchmarking Size: %d\n", writeOpt.size)
-	fmt.Printf("Benchmarking Write Total: %v\n", writeOpt.bucketCount*writeOpt.size)
 	fmt.Printf("Benchmarking Bucket Unit: %s\n", "Seconds")
 	fmt.Printf("Concurrency Level: %d\n", writeOpt.concurrencyLevel)
-	fmt.Printf("\n\n")
+	fmt.Printf("\n")
 
 	fmt.Printf("Time taken for tests: %v\n", elapsedTime)
 	fmt.Printf("Complete requests: %d\n", completeRequests)
