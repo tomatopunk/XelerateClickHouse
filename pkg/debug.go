@@ -18,7 +18,7 @@ func NewDebugAppendMetrics() *DebugAppendMetrics {
 func (dam *DebugAppendMetrics) Add(metric Metric) {
 	dam.metrics = append(dam.metrics, metric)
 	if v, ok := dam.distributeInfo[metric.Timestamp]; ok {
-		v++
+		dam.distributeInfo[metric.Timestamp] = v + 1
 	} else {
 		dam.distributeInfo[metric.Timestamp] = 1
 	}

@@ -49,8 +49,8 @@ var writeCommand = &cobra.Command{
 
 func init() {
 	root.AddCommand(writeCommand)
-	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 2, "bucket count like 30")
-	writeCommand.Flags().IntVar(&writeOpt.size, "n", 2, "bucket size like 100")
+	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 3, "bucket count like 30")
+	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
 	writeCommand.Flags().IntVar(&writeOpt.concurrencyLevel, "c", 1, "concurrency level like 1")
 }
 
@@ -88,7 +88,8 @@ func writeToClickhouse() error {
 
 				// Generate metrics data
 				for j := 0; j < writeOpt.size; j++ {
-					t := timestamp.Add(time.Duration(j) * time.Second)
+					//t := timestamp.Add(time.Duration(j) * time.Second)
+					t := timestamp
 					metric := generateMetric(t)
 					err := batch.AppendStruct(&metric)
 					if debugFlag {
