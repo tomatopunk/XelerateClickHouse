@@ -7,5 +7,7 @@ COPY . .
 # Build
 RUN CGO_ENABLED=0 GOOS=linux go build -o cb cmd/main.go
 
+ENV PATH="/app:${PATH}"
+
 # Run
-CMD ["cb"]
+CMD ["cb","--help"]
