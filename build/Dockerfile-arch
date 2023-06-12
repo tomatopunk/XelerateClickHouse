@@ -1,0 +1,16 @@
+FROM golang:1.19 as builder
+
+WORKDIR /app
+
+COPY . .
+
+# Set the target platform for buildx
+ARG TARGETPLATFORM
+
+# Build
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=${TARGETPLATFORM%/*} GOARCH=${TARGETPLATFORM#*/} go build -o cb cmd/main.go
+
+# Run
+CMD ["/app/cb", "--help"]

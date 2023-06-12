@@ -27,3 +27,25 @@ add-license:
 		tmpfile=$$(mktemp); \
 		echo $(LICENSE_HEADER) | cat - $$file > $$tmpfile && mv $$tmpfile $$file; \
 	done
+
+DOCKER_REGISTRY ?= my-registry
+DOCKER_REGISTRY_USERNAME ?= your-username
+DOCKER_REGISTRY_PASSWORD ?= your-password
+IMAGE_NAME := clickhouse-benchmark
+IMAGE_VERSION := $(shell git log -1 --format=%h)
+IMAGE := $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(IMAGE_VERSION)
+
+.PHONY: build
+
+build-arch:
+	docker buildx create --use
+	docker buildx build --platform linux/amd64,linux/arm64 -t "$(IMAGE)" \
+		--label "branch=$(shell git rev-parse --abbrev-ref HEAD)" \
+		--label "commit=$(shell git rev-parse HEAD)" \
+		--label "build-time=$(shell date '+%Y-%m-%d %T%z')" \
+		--push \
+		-f build/Dockerfile-arch .
+	@echo "Docker image built and pushed: $(IMAGE)"
+build-push: build-arch
+	docker login -u "$(DOCKER_REGISTRY_USERNAME)" -p "$(DOCKER_REGISTRY_PASSWORD)" "$(DOCKER_REGISTRY)"
+	docker push "$(IMAGE)"
