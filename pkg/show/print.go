@@ -46,3 +46,7 @@ func Warn(format string, a ...interface{}) {
 func Error(format string, a ...interface{}) {
 	logWithColor("ERROR", ErrorColor, ErrorIcon, format, a...)
 }
+
+func EmptyLine() {
+	fmt.Println()
+}
