@@ -84,8 +84,8 @@ func descClickhouse() error {
 type PartitionInfo struct {
 	Name     string
 	DiskName string
-	RowCount int
-	DiskSize int
+	RowCount uint
+	DiskSize uint
 }
 
 func printPartitionAggregation(partitions []PartitionInfo) {
@@ -128,7 +128,7 @@ func getPartitionsInfo(conn driver.Conn) ([]PartitionInfo, error) {
 
 	partitions := make([]PartitionInfo, 0)
 	var partition, diskName string
-	var totalRow, allDisk int
+	var totalRow, allDisk uint
 	for rows.Next() {
 		err := rows.Scan(&partition, &diskName, &totalRow, &allDisk)
 		if err != nil {
