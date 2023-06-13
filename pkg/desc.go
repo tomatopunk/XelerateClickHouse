@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"os"
 
+	"clickhouse-benchmark/pkg/show"
+
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +34,7 @@ var descCommand = &cobra.Command{
 	Long: ` describe the table `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := descClickhouse(); err != nil {
-			fmt.Printf("Error: %v\n", err)
+			show.Error("Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -62,16 +64,16 @@ func descClickhouse() error {
 	}
 
 	// Print the description
-	fmt.Printf("Description <%s>\n\n", tableName)
-	fmt.Printf("Clickhouse URL: %s\n\n", os.Getenv("CLICKHOUSE_URL"))
-	fmt.Printf("Create Table SQL:\n\n%s\n\n", createTableQuery)
-	fmt.Println("Partition:")
+	show.Info("Description <%s>\n\n", tableName)
+	show.Info("Clickhouse URL: %s\n\n", os.Getenv("CLICKHOUSE_URL"))
+	show.Info("Create Table SQL:\n\n%s\n\n", createTableQuery)
+	show.Info("Partition: \n\n")
 	for i, partition := range partitions {
 		if i > partitionLimit {
-			fmt.Printf("...")
+			show.Info("...")
 			break
 		}
-		fmt.Printf("Partition %s, disk: %s, total_row: %d, all_disk: %d\n", partition.Name, partition.DiskName, partition.RowCount, partition.DiskSize)
+		show.Info("Partition %s, disk: %s, total_row: %d, all_disk: %d\n", partition.Name, partition.DiskName, partition.RowCount, partition.DiskSize)
 	}
 
 	printPartitionAggregation(partitions)
@@ -109,10 +111,10 @@ func printPartitionAggregation(partitions []PartitionInfo) {
 
 	// Print the aggregated partition information
 	for disk, partition := range aggregatedPartitions {
-		fmt.Printf("Disk: %s\n", disk)
-		fmt.Printf("Partition Count: %d\n", len(partitions))
-		fmt.Printf("Sum RowCount: %d\n", partition.RowCount)
-		fmt.Printf("Sum DiskSize: %.2f MB\n\n", float64(partition.DiskSize)/1024/1024)
+		show.Info("Disk: %s\n", disk)
+		show.Info("Partition Count: %d\n", len(partitions))
+		show.Info("Sum RowCount: %d\n", partition.RowCount)
+		show.Info("Sum DiskSize: %.2f MB\n\n", float64(partition.DiskSize)/1024/1024)
 	}
 }
 

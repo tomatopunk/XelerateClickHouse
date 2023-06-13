@@ -25,6 +25,8 @@ import (
 	"os"
 	"strings"
 
+	"clickhouse-benchmark/pkg/show"
+
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +36,7 @@ var initCommand = &cobra.Command{
 	Long: `create database, create tables `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := initClickhouse(); err != nil {
-			fmt.Printf("Error: %v\n", err)
+			show.Error("Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -61,7 +63,7 @@ func initClickhouse() error {
 		return fmt.Errorf("failed to create tables: %v", err)
 	}
 
-	fmt.Println("Database and tables created successfully")
+	show.Info("Database and tables created successfully \n\n")
 
 	return nil
 }
