@@ -7,6 +7,7 @@ clickhouse-benchmark is a command-line tool built with Go for benchmarking and t
 ## Table of Contents
 
 - [Installation](#installation)
+- [Prerequisites](#prerequisites)
 - [Usage](#usage)
 - [Commands](#commands)
 - [Contributing](#contributing)
@@ -20,6 +21,36 @@ To install clickhouse-benchmark, you can download the binary for your operating 
 2. Clone the repository: `git clone https://github.com/your-username/clickhouse-benchmark.git`.
 3. Navigate to the project directory: `cd clickhouse-benchmark`.
 4. Build the binary: `go build -o clickhouse-benchmark`.
+
+## Prerequisites
+
+Before running the clickhouse-benchmark tool, make sure you have the following prerequisites in place:
+
+### Environment Variables
+
+Set the following environment variables with the appropriate values:
+
+- `CLICKHOUSE_URL`: This variable specifies the address(es) of the ClickHouse server(s) to connect to. If you have multiple addresses, separate them with commas (`,`). For example:
+
+  ```bash
+  CLICKHOUSE_URL=clickhouse-chi:9000,clickhouse-another:9000
+  ```
+
+- `CLICKHOUSE_USER`: This variable specifies the username to authenticate with the ClickHouse server, if required. If authentication is not enabled, leave this variable empty.
+
+  ```bash
+  CLICKHOUSE_USER=
+  ```
+
+- `CLICKHOUSE_PASSWORD`: This variable specifies the password to authenticate with the ClickHouse server, if required. If authentication is not enabled or if you want to connect without a password, leave this variable empty.
+
+  ```bash
+  CLICKHOUSE_PASSWORD=xx
+  ```
+
+Make sure to replace `clickhouse-chi:9000` with the actual address(es) of your ClickHouse server(s) and set the appropriate username and password values if authentication is enabled.
+
+Ensure that these environment variables are properly set before running the clickhouse-benchmark tool to establish a connection with your ClickHouse database.
 
 ## Usage
 
