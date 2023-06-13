@@ -35,7 +35,7 @@ func getConn(addr string) (driver.Conn, error) {
 			Password: os.Getenv("CLICKHOUSE_PASSWORD"),
 		},
 		DialTimeout:     getDurationEnv("DIAL_TIME_OUT", 10*time.Second),
-		Debug:           debugFlag,
+		Debug:           getBoolEnv("DEBUG", false),
 		MaxIdleConns:    getIntEnv("MAX_IDLE_CONNS", 5),
 		MaxOpenConns:    getIntEnv("MAX_OPEN_CONNS", 10),
 		ConnMaxLifetime: getDurationEnv("CONN_MAX_LIFE_TIME", 1*time.Hour),

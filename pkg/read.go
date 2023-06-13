@@ -132,14 +132,14 @@ func benchmarkReadQueries() error {
 	p99, _ := stats.Percentile(bucketSlice, 99)
 	p999, _ := stats.Percentile(bucketSlice, 99.9)
 
-	show.Info("p50: %v, p80: %v, p99: %v, p999: %v\n", p50, p80, p99, p999)
+	show.Info("p50: %v, p80: %v, p99: %v, p999: %v", p50, p80, p99, p999)
 
 	// Print benchmarking results
-	show.Info("\n\n")
-	show.Info("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
-	show.Info("Total queries executed: %d\n", iterations)
-	show.Info("Failed requests: %d\n", failedQuery)
-	show.Info("Time taken for tests: %v\n", totalTime)
+	show.EmptyLine()
+	show.Info("ClickHouse URL: %s", os.Getenv("CLICKHOUSE_URL"))
+	show.Info("Total queries executed: %d", iterations)
+	show.Info("Failed requests: %d", failedQuery)
+	show.Info("Time taken for tests: %v", totalTime)
 
 	return nil
 }
@@ -164,6 +164,6 @@ func printResults(results map[int]float64) {
 
 	for _, bucket := range keys {
 		bucketResults := results[bucket]
-		show.Info("bucket: %v, elapsed: %v\n", bucket, bucketResults)
+		show.Info("bucket: %v, elapsed: %v", bucket, bucketResults)
 	}
 }
