@@ -25,6 +25,8 @@ import (
 	"sort"
 	"time"
 
+	"clickhouse-benchmark/pkg/show"
+
 	"github.com/montanaflynn/stats"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +45,7 @@ var readCommand = &cobra.Command{
 	Long: ` benchmarking read `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := benchmarkReadQueries(); err != nil {
-			fmt.Printf("Error: %v\n", err)
+			show.Error("Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -104,7 +106,6 @@ func benchmarkReadQueries() error {
 		t := startTime.Add(duration * time.Duration(i))
 		query := fmt.Sprintf("%s AND timestamp = '%s'", timeCondition, t.Format("2006-01-02 15:04:05"))
 		start := time.Now()
-		fmt.Println("debug!!", query)
 		rows, err := conn.Query(context.Background(), readOpt.sql+" WHERE "+query)
 		if err != nil {
 			failedQuery++
@@ -128,14 +129,14 @@ func benchmarkReadQueries() error {
 	p99, _ := stats.Percentile(bucketSlice, 99)
 	p999, _ := stats.Percentile(bucketSlice, 99.9)
 
-	fmt.Printf("p50: %v, p80: %v, p99: %v, p999: %v\n", p50, p80, p99, p999)
+	show.Info("p50: %v, p80: %v, p99: %v, p999: %v\n", p50, p80, p99, p999)
 
 	// Print benchmarking results
-	fmt.Printf("\n\n")
-	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
-	fmt.Printf("Total queries executed: %d\n", iterations)
-	fmt.Printf("Failed requests: %d\n", failedQuery)
-	fmt.Printf("Time taken for tests: %v\n", totalTime)
+	show.Info("\n\n")
+	show.Info("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
+	show.Info("Total queries executed: %d\n", iterations)
+	show.Info("Failed requests: %d\n", failedQuery)
+	show.Info("Time taken for tests: %v\n", totalTime)
 
 	return nil
 }
@@ -160,6 +161,6 @@ func printResults(results map[int]float64) {
 
 	for _, bucket := range keys {
 		bucketResults := results[bucket]
-		fmt.Printf("bucket: %v, elapsed: %v\n", bucket, bucketResults)
+		show.Info("bucket: %v, elapsed: %v\n", bucket, bucketResults)
 	}
 }

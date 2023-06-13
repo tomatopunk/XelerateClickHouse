@@ -24,6 +24,8 @@ import (
 	"os"
 	"time"
 
+	"clickhouse-benchmark/pkg/show"
+
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +41,7 @@ var writeCommand = &cobra.Command{
 	Long: ` write some data to clickhouse`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := writeToClickhouse(); err != nil {
-			fmt.Printf("Error: %v\n", err)
+			show.Error("Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -87,7 +89,7 @@ func writeToClickhouse() error {
 
 			if err != nil {
 				if debugFlag {
-					fmt.Printf("append is failed: %v", err)
+					show.Debug("append is failed: %v", err)
 				}
 				failedRequests++
 			}
@@ -101,7 +103,7 @@ func writeToClickhouse() error {
 	}
 	err = batch.Send()
 	if err != nil {
-		fmt.Printf("Failed to send batch: %v\n", err)
+		show.Error("Failed to send batch: %v\n", err)
 	}
 
 	// Perform benchmarking calculations
@@ -109,16 +111,16 @@ func writeToClickhouse() error {
 	completeRequests := totalRecords / writeOpt.size
 
 	// Print benchmarking results
-	fmt.Printf("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
-	fmt.Printf("Benchmarking Bucket Count: %d\n", writeOpt.bucketCount)
-	fmt.Printf("Benchmarking Size: %d\n", writeOpt.size)
-	fmt.Printf("Benchmarking Bucket Unit: %s\n", "Seconds")
-	fmt.Printf("\n")
+	show.Info("ClickHouse URL: %s\n", os.Getenv("CLICKHOUSE_URL"))
+	show.Info("Benchmarking Bucket Count: %d\n", writeOpt.bucketCount)
+	show.Info("Benchmarking Size: %d\n", writeOpt.size)
+	show.Info("Benchmarking Bucket Unit: %s\n", "Seconds")
+	show.Info("\n")
 
-	fmt.Printf("Time taken for tests: %v\n", elapsedTime)
-	fmt.Printf("Complete requests: %d\n", completeRequests)
-	fmt.Printf("Failed requests: %d\n", failedRequests)
-	fmt.Printf("Total transferred: %d\n", totalRecords) // Update this based on the actual transferred data size
+	show.Info("Time taken for tests: %v\n", elapsedTime)
+	show.Info("Complete requests: %d\n", completeRequests)
+	show.Info("Failed requests: %d\n", failedRequests)
+	show.Info("Total transferred: %d\n", totalRecords) // Update this based on the actual transferred data size
 
 	return nil
 }

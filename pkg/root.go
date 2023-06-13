@@ -19,8 +19,9 @@
 package pkg
 
 import (
-	"fmt"
 	"os"
+
+	"clickhouse-benchmark/pkg/show"
 
 	"github.com/spf13/cobra"
 )
@@ -39,7 +40,7 @@ func init() {
 
 func Execute() {
 	if err := root.Execute(); err != nil {
-		fmt.Println(err)
+		show.Error(err.Error())
 		os.Exit(1)
 	}
 }

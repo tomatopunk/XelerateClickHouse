@@ -19,9 +19,10 @@
 package pkg
 
 import (
-	"fmt"
 	"sort"
 	"time"
+
+	"clickhouse-benchmark/pkg/show"
 )
 
 type DebugAppendMetrics struct {
@@ -67,6 +68,6 @@ func (dam *DebugAppendMetrics) Printf() {
 
 	// Print timestamps and counts in ascending order
 	for _, entry := range temp {
-		fmt.Printf("Timestamp: %v, Count: %d\n", entry.timestamp, entry.count)
+		show.Debug("Timestamp: %v, Count: %d\n", entry.timestamp, entry.count)
 	}
 }

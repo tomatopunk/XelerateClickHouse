@@ -19,9 +19,8 @@
 package main
 
 import (
-	"log"
-
 	"clickhouse-benchmark/pkg"
+	"clickhouse-benchmark/pkg/show"
 
 	"github.com/joho/godotenv"
 )
@@ -29,7 +28,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		show.Error("Error loading .env file")
 	}
 
 	pkg.Execute()

@@ -20,6 +20,7 @@ package pkg
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	ck "github.com/ClickHouse/clickhouse-go/v2"
@@ -28,7 +29,7 @@ import (
 
 func getConn(addr string) (driver.Conn, error) {
 	options := &ck.Options{
-		Addr: []string{addr},
+		Addr: strings.Split(addr, ","),
 		Auth: ck.Auth{
 			Username: os.Getenv("CLICKHOUSE_USER"),
 			Password: os.Getenv("CLICKHOUSE_PASSWORD"),
