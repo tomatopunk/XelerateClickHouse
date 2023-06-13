@@ -39,13 +39,13 @@ Set the following environment variables with the appropriate values:
 - `CLICKHOUSE_USER`: This variable specifies the username to authenticate with the ClickHouse server, if required. If authentication is not enabled, leave this variable empty.
 
   ```bash
-  CLICKHOUSE_USER=
+  CLICKHOUSE_USER=clickhouse-one
   ```
 
 - `CLICKHOUSE_PASSWORD`: This variable specifies the password to authenticate with the ClickHouse server, if required. If authentication is not enabled or if you want to connect without a password, leave this variable empty.
 
   ```bash
-  CLICKHOUSE_PASSWORD=xx
+  CLICKHOUSE_PASSWORD=password
   ```
 
 Make sure to replace `clickhouse-chi:9000` with the actual address(es) of your ClickHouse server(s) and set the appropriate username and password values if authentication is enabled.
