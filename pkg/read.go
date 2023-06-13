@@ -104,8 +104,11 @@ func benchmarkReadQueries() error {
 
 	for i := 1; i <= iterations; i++ {
 		t := startTime.Add(duration * time.Duration(i))
-		query := fmt.Sprintf("%s AND timestamp = '%s'", timeCondition, t.Format("2006-01-02 15:04:05"))
+		query := fmt.Sprintf("%s AND timestamp >= '%s' and timestamp < '%s'", timeCondition, t.Format("2006-01-02 15:04:05"), t.Add(duration).Format("2006-01-02 15:04:05"))
 		start := time.Now()
+		if debugFlag {
+			show.Debug("debug sql: %s", query)
+		}
 		rows, err := conn.Query(context.Background(), readOpt.sql+" WHERE "+query)
 		if err != nil {
 			failedQuery++
