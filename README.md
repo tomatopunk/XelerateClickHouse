@@ -108,9 +108,6 @@ The `build/k8s.yaml` file in your project is used for configuring and deploying 
 
 3. Monitor the deployment and check the status of your application using the appropriate Kubernetes commands, such as `kubectl get deployments`, `kubectl get pods`, or `kubectl get services`.
 
-Make sure to customize the `build/k8s.yaml` file to match your application's requirements and the desired Kubernetes configuration.
-
-
 ## Contributing
 
 Contributions to clickhouse-benchmark are welcome! If you encounter any issues or have suggestions for improvement, please open an issue on the GitHub repository.
