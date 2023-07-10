@@ -37,7 +37,7 @@ IMAGE := $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(IMAGE_VERSION)
 
 .PHONY: build
 
-build-push:
+build-push-buildkit:
 	docker login -u "$(DOCKER_REGISTRY_USERNAME)" -p "$(DOCKER_REGISTRY_PASSWORD)" "$(DOCKER_REGISTRY)"
 	docker buildx create --use
 	docker buildx build --platform linux/amd64,linux/arm64 -t "$(IMAGE)" \
@@ -46,4 +46,17 @@ build-push:
 		--label "build-time=$(shell date '+%Y-%m-%d %T%z')" \
 		--push \
 		-f build/Dockerfile-arch .
+	@echo "Docker image built and pushed: $(IMAGE)"
+
+build-push:
+	docker build --platform linux/amd64 \
+	-t "$(IMAGE)" \
+    --label "branch=$(shell git rev-parse --abbrev-ref HEAD)" \
+	--label "commit=$(shell git rev-parse HEAD)" \
+    --label "build-time=$(shell date '+%Y-%m-%d %T%z')" \
+    -f build/Dockerfile .
+
+	docker push $(IMAGE)
+	docker login -u "$(DOCKER_REGISTRY_USERNAME)" -p "$(DOCKER_REGISTRY_PASSWORD)" "$(DOCKER_REGISTRY)"
+
 	@echo "Docker image built and pushed: $(IMAGE)"
