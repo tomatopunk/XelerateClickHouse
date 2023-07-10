@@ -1,17 +1,26 @@
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: clickhouse-benchmark-pod
+  name: clickhouse-benchmark
 spec:
-  containers:
-    - name: clickhouse-benchmark-container
-      image: tomatopunk/clickhouse-benchmark:20230613110030-f036a17
-      command: ["/bin/sh", "-c"]
-      args: ["while true; do sleep 30; done;"]
-      env:
-        - name: CLICKHOUSE_URL
-          value: "1231231"
-        - name: CLICKHOUSE_USER
-          value: "123"
-        - name: CLICKHOUSE_PASSWORD
-          value: "123"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clickhouse-benchmark
+  template:
+    metadata:
+      labels:
+        app: clickhouse-benchmark
+    spec:
+      containers:
+        - name: clickhouse-benchmark-container
+          image: tomatopunk/clickhouse-benchmark:20230613110030-f036a17
+          command: ["/bin/sh", "-c"]
+          args: ["while true; do sleep 30; done;"]
+          env:
+            - name: CLICKHOUSE_URL
+              value: "1231231"
+            - name: CLICKHOUSE_USER
+              value: "123"
+            - name: CLICKHOUSE_PASSWORD
+              value: "123"
