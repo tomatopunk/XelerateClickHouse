@@ -128,7 +128,7 @@ func writeToClickhouse() error {
 	show.Info("ClickHouse URL: %s", os.Getenv("CLICKHOUSE_URL"))
 	show.Info("Benchmarking Bucket Count: %d", writeOpt.bucketCount)
 	show.Info("Benchmarking Size: %d", writeOpt.size)
-	show.Info("Benchmarking Concurrency", writeOpt.concurrencyLimit)
+	show.Info("Benchmarking Concurrency: %v", writeOpt.concurrencyLimit)
 	show.Info("Benchmarking Bucket Unit: %s", "Seconds")
 	show.EmptyLine()
 
