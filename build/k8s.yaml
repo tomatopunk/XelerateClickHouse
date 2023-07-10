@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: clickhouse-benchmark-container
-          image: tomatopunk/clickhouse-benchmark:20230613110030-f036a17
+          image: tomatopunk/clickhouse-benchmark:20230710142603-f411536
           command: ["/bin/sh", "-c"]
           args: ["while true; do sleep 30; done;"]
           env:
