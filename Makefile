@@ -48,6 +48,13 @@ build-push-buildkit:
 		-f build/Dockerfile-arch .
 	@echo "Docker image built and pushed: $(IMAGE)"
 
+build:
+	docker build --platform linux/amd64 \
+	-t "$(IMAGE)" \
+    --label "branch=$(shell git rev-parse --abbrev-ref HEAD)" \
+	--label "commit=$(shell git rev-parse HEAD)" \
+    --label "build-time=$(shell date '+%Y-%m-%d %T%z')" \
+    -f build/Dockerfile .
 build-push:
 	docker build --platform linux/amd64 \
 	-t "$(IMAGE)" \
