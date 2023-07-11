@@ -26,6 +26,7 @@ import (
 	"clickhouse-benchmark/pkg/clickhouse"
 	"clickhouse-benchmark/pkg/show"
 
+	"github.com/cheggaaa/pb/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -71,21 +72,20 @@ func writeToClickhouse() error {
 	wg := sync.WaitGroup{}
 	wg.Add(writeOpt.concurrencyLimit)
 
-	// Create multiple batches based on concurrency limit
-	batches := make([]*clickhouse.Batch, writeOpt.concurrencyLimit)
 	for i := 0; i < writeOpt.concurrencyLimit; i++ {
 		batch, err := clickhouse.Prepare(conn, databaseName, tableName)
 		if err != nil {
 			return err
 		}
-		batches[i] = batch
 
+		//batch.NewProgressBar(totalRecords / writeOpt.concurrencyLimit)
 		// Start a goroutine to process each batch
-		go func(batch *clickhouse.Batch) {
+		go func(b *clickhouse.Batch) {
 			defer func() {
 				wg.Done()
 			}()
 
+			bar := pb.StartNew(totalRecords / writeOpt.concurrencyLimit)
 			// Generate data for each bucket
 			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
 				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
@@ -95,7 +95,8 @@ func writeToClickhouse() error {
 					//t := timestamp.Add(time.Duration(j) * time.Second)
 					t := timestamp
 					metric := generateMetric(t)
-					err := batch.AppendStruct(&metric)
+					err := b.AppendStruct(&metric)
+					bar.Increment()
 					if debugFlag {
 						debugInfo.Add(metric)
 					}
@@ -106,19 +107,21 @@ func writeToClickhouse() error {
 				}
 			}
 
+			bar.Finish()
+
 			// Send the batch for execution
 			if debugFlag {
 				debugInfo.Printf()
 				return
 			}
 
-			err := batch.Send()
+			err := b.Send()
 			if err != nil {
 				show.Error("Failed to send batch: %v\n", err)
 				return
 			}
-		}(batches[i])
-
+		}(batch)
+		batch.Finish()
 	}
 
 	// Wait for all batches to complete
