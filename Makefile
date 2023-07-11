@@ -56,7 +56,7 @@ build-push:
     --label "build-time=$(shell date '+%Y-%m-%d %T%z')" \
     -f build/Dockerfile .
 
-	docker push $(IMAGE)
 	docker login -u "$(DOCKER_REGISTRY_USERNAME)" -p "$(DOCKER_REGISTRY_PASSWORD)" "$(DOCKER_REGISTRY)"
+	docker push $(IMAGE)
 
 	@echo "Docker image built and pushed: $(IMAGE)"
