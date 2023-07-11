@@ -74,20 +74,24 @@ func writeToClickhouse() error {
 
 	bar := pb.StartNew(totalRecords)
 
-	for i := 0; i < writeOpt.concurrencyLimit; i++ {
+	for i := 1; i <= writeOpt.concurrencyLimit; i++ {
 		batch, err := clickhouse.Prepare(conn, databaseName, tableName)
 		if err != nil {
 			return err
 		}
 
 		// Start a goroutine to process each batch
-		go func() {
+		go func(step int) {
 			defer func() {
 				wg.Done()
 			}()
 
 			// Generate data for each bucket
-			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
+			for bucket := step; bucket <= writeOpt.bucketCount*writeOpt.concurrencyLimit; bucket += writeOpt.concurrencyLimit {
+				if bucket > writeOpt.bucketCount {
+					break
+				}
+				//step concurrency
 				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
 
 				// Generate metrics data
@@ -98,7 +102,9 @@ func writeToClickhouse() error {
 					err := batch.AppendStruct(&metric)
 					bar.Increment()
 					if debugFlag {
+						debugInfo.Lock()
 						debugInfo.Add(metric)
+						debugInfo.Unlock()
 					}
 
 					if err != nil {
@@ -109,7 +115,6 @@ func writeToClickhouse() error {
 
 			// Send the batch for execution
 			if debugFlag {
-				debugInfo.Printf()
 				return
 			}
 
@@ -118,13 +123,17 @@ func writeToClickhouse() error {
 				show.Error("Failed to send batch: %v\n", err)
 				return
 			}
-		}()
+		}(i)
 	}
 
 	// Wait for all batches to complete
 	wg.Wait()
 
 	bar.Finish()
+	if debugFlag {
+		debugInfo.Printf()
+	}
+
 	// Perform benchmarking calculations
 	elapsedTime := time.Since(startTime)
 	completeRequests := totalRecords / writeOpt.size
@@ -141,19 +150,5 @@ func writeToClickhouse() error {
 	show.Info("Complete requests: %d", completeRequests)
 	show.Info("Total transferred: %d", totalRecords) // Update this based on the actual transferred data size
 
-	return nil
-}
-
-// Send the batch for execution and handle progress output
-func sendBatch(batch *clickhouse.Batch, debugFlag bool, debugInfo *DebugAppendMetrics) error {
-	if debugFlag {
-		debugInfo.Printf()
-		return nil
-	}
-
-	err := batch.Send()
-	if err != nil {
-		return err
-	}
 	return nil
 }

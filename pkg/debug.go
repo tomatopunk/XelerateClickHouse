@@ -20,12 +20,14 @@ package pkg
 
 import (
 	"sort"
+	"sync"
 	"time"
 
 	"clickhouse-benchmark/pkg/show"
 )
 
 type DebugAppendMetrics struct {
+	sync.Mutex
 	metrics        []Metric
 	distributeInfo map[time.Time]int
 }
