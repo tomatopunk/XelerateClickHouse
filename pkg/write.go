@@ -72,6 +72,8 @@ func writeToClickhouse() error {
 	wg := sync.WaitGroup{}
 	wg.Add(writeOpt.concurrencyLimit)
 
+	bar := pb.StartNew(totalRecords)
+
 	for i := 0; i < writeOpt.concurrencyLimit; i++ {
 		batch, err := clickhouse.Prepare(conn, databaseName, tableName)
 		if err != nil {
@@ -85,7 +87,6 @@ func writeToClickhouse() error {
 				wg.Done()
 			}()
 
-			bar := pb.StartNew(totalRecords / writeOpt.concurrencyLimit)
 			// Generate data for each bucket
 			for bucket := 0; bucket < writeOpt.bucketCount; bucket++ {
 				timestamp := startTime.Add(time.Duration(bucket) * time.Second)
@@ -107,8 +108,6 @@ func writeToClickhouse() error {
 				}
 			}
 
-			bar.Finish()
-
 			// Send the batch for execution
 			if debugFlag {
 				debugInfo.Printf()
@@ -127,6 +126,7 @@ func writeToClickhouse() error {
 	// Wait for all batches to complete
 	wg.Wait()
 
+	bar.Finish()
 	// Perform benchmarking calculations
 	elapsedTime := time.Since(startTime)
 	completeRequests := totalRecords / writeOpt.size
