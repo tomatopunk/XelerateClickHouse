@@ -80,9 +80,8 @@ func writeToClickhouse() error {
 			return err
 		}
 
-		//batch.NewProgressBar(totalRecords / writeOpt.concurrencyLimit)
 		// Start a goroutine to process each batch
-		go func(b *clickhouse.Batch) {
+		go func() {
 			defer func() {
 				wg.Done()
 			}()
@@ -96,7 +95,7 @@ func writeToClickhouse() error {
 					//t := timestamp.Add(time.Duration(j) * time.Second)
 					t := timestamp
 					metric := generateMetric(t)
-					err := b.AppendStruct(&metric)
+					err := batch.AppendStruct(&metric)
 					bar.Increment()
 					if debugFlag {
 						debugInfo.Add(metric)
@@ -114,13 +113,12 @@ func writeToClickhouse() error {
 				return
 			}
 
-			err := b.Send()
+			err := batch.Send()
 			if err != nil {
 				show.Error("Failed to send batch: %v\n", err)
 				return
 			}
-		}(batch)
-		batch.Finish()
+		}()
 	}
 
 	// Wait for all batches to complete
