@@ -20,6 +20,7 @@ package pkg
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"clickhouse-benchmark/pkg/clickhouse"
@@ -67,8 +68,8 @@ func writeToClickhouse() error {
 
 	debugInfo := NewDebugAppendMetrics()
 
-	// Create a channel to synchronize the completion of batches
-	done := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(writeOpt.concurrencyLimit)
 
 	// Create multiple batches based on concurrency limit
 	batches := make([]*clickhouse.Batch, writeOpt.concurrencyLimit)
@@ -82,7 +83,7 @@ func writeToClickhouse() error {
 		// Start a goroutine to process each batch
 		go func(batch *clickhouse.Batch) {
 			defer func() {
-				done <- struct{}{} // Signal the completion of the batch
+				wg.Done()
 			}()
 
 			// Generate data for each bucket
@@ -100,25 +101,28 @@ func writeToClickhouse() error {
 					}
 
 					if err != nil {
-						if debugFlag {
-							show.Debug("append is failed: %v", err)
-						}
+						show.Error("append is failed: %v", err)
 					}
 				}
 			}
 
 			// Send the batch for execution
-			err := sendBatch(batch, debugFlag, debugInfo, totalRecords)
+			if debugFlag {
+				debugInfo.Printf()
+				return
+			}
+
+			err := batch.Send()
 			if err != nil {
 				show.Error("Failed to send batch: %v\n", err)
+				return
 			}
 		}(batches[i])
+
 	}
 
 	// Wait for all batches to complete
-	for i := 0; i < writeOpt.concurrencyLimit; i++ {
-		<-done
-	}
+	wg.Wait()
 
 	// Perform benchmarking calculations
 	elapsedTime := time.Since(startTime)
@@ -140,7 +144,7 @@ func writeToClickhouse() error {
 }
 
 // Send the batch for execution and handle progress output
-func sendBatch(batch *clickhouse.Batch, debugFlag bool, debugInfo *DebugAppendMetrics, totalRecords int) error {
+func sendBatch(batch *clickhouse.Batch, debugFlag bool, debugInfo *DebugAppendMetrics) error {
 	if debugFlag {
 		debugInfo.Printf()
 		return nil
@@ -150,9 +154,5 @@ func sendBatch(batch *clickhouse.Batch, debugFlag bool, debugInfo *DebugAppendMe
 	if err != nil {
 		return err
 	}
-
-	progress := (batch.TotalRows() / writeOpt.size) * 100 / (totalRecords / writeOpt.size)
-	show.Info("Progress: %d%%", progress)
-
 	return nil
 }
