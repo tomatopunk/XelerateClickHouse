@@ -20,6 +20,8 @@ package pkg
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Metric struct {
@@ -34,8 +36,9 @@ type Metric struct {
 }
 
 // generateMetrics generates a random Metrics object with the given timestamp
-func generateMetric(timestamp time.Time) Metric {
-	return Metric{
+
+func generateMetric(timestamp time.Time, randomColumn bool) Metric {
+	metric := Metric{
 		Timestamp:         timestamp,
 		MetricGroup:       "sample_metric_group",
 		NumberFieldKeys:   []string{"number_field_key_1", "number_field_key_2"},
@@ -45,4 +48,21 @@ func generateMetric(timestamp time.Time) Metric {
 		TagKeys:           []string{"tag_key_1", "tag_key_2"},
 		TagValues:         []string{"tag_value_1", "tag_value_2"},
 	}
+
+	if randomColumn {
+		for i := 0; i < 10; i++ {
+			guid := uuid.New()
+			key := guid.String()
+
+			metric.StringFieldKeys = append(metric.StringFieldKeys, key)
+			metric.StringFieldValues = append(metric.StringFieldValues, key)
+			metric.NumberFieldKeys = append(metric.NumberFieldKeys, key)
+			metric.NumberFieldValues = append(metric.NumberFieldValues, float64(i))
+
+			metric.TagKeys = append(metric.TagKeys, key)
+			metric.TagValues = append(metric.TagValues, key)
+		}
+	}
+
+	return metric
 }

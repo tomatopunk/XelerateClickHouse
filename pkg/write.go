@@ -34,6 +34,7 @@ type WriteOption struct {
 	bucketCount      int // bucket count like 30
 	size             int // bucket size like 100
 	concurrencyLimit int
+	randomColumn     bool
 }
 
 var writeOpt WriteOption
@@ -54,6 +55,7 @@ func init() {
 	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 100, "bucket count like 30")
 	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
 	writeCommand.Flags().IntVar(&writeOpt.concurrencyLimit, "c", 1, "concurrency limit like 1")
+	writeCommand.Flags().BoolVar(&writeOpt.randomColumn, "random", false, "random column")
 }
 
 func writeToClickhouse() error {
@@ -98,7 +100,7 @@ func writeToClickhouse() error {
 				for j := 0; j < writeOpt.size; j++ {
 					//t := timestamp.Add(time.Duration(j) * time.Second)
 					t := timestamp
-					metric := generateMetric(t)
+					metric := generateMetric(t, writeOpt.randomColumn)
 					err := batch.AppendStruct(&metric)
 					bar.Increment()
 					if debugFlag {
