@@ -16,22 +16,19 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Build Docker image
-        run: |
-          TAG_NAME=tomatopunk/clickhouse-benchmark:${{ github.ref_name }}
-          docker build --platform linux/amd64 -t $TAG_NAME -f build/Dockerfile .
-          echo "::set-output name=image_name::$TAG_NAME"
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
 
-      - name: Push Docker image to Docker Hub
+      - name: Build-Push Docker image
+        id: docker_build_push
         run: |
-          IMAGE_NAME=${{ needs.build.outputs.image_name }}
-          docker push $IMAGE_NAME
+          TAG_NAME=tomatopunk/clickhouse-benchmark:${{ github.ref_name }}
+          docker build --platform linux/amd64 -t $TAG_NAME -f build/Dockerfile .
+          docker push $TAG_NAME
+          echo "::set-output name=image_name::$TAG_NAME"
 
       - name: Update release description
         uses: actions/github-script@v4
@@ -40,7 +37,8 @@ jobs:
           script: |
             const releaseName = context.payload.release.name;
             const releaseDescription = context.payload.release.body;
-            const newDescription = `${releaseDescription}\n\nDocker image: ${context.payload.repository.owner.login}/${context.payload.repository.name}:${context.payload.release.tag_name}`;
+            const imageName = '${{ steps.docker_build_push.outputs.image_name }}';
+            const newDescription = `${releaseDescription}\n\nDocker image:${imageName}`;
             const octokit = require('@octokit/rest')();
             octokit.authenticate({
               type: 'token',
