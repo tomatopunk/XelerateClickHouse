@@ -18,7 +18,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          TAG_NAME=tomatopunk/clickhouse-benchmark:${{GITHUB_REF/refs\/tags\//}}
+          TAG_NAME=tomatopunk/clickhouse-benchmark:${{ github.ref_name }}
           docker build --platform linux/amd64 -t $TAG_NAME -f build/Dockerfile .
           echo "::set-output name=image_name::$TAG_NAME"
 
