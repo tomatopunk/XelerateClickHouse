@@ -52,10 +52,10 @@ var writeCommand = &cobra.Command{
 
 func init() {
 	root.AddCommand(writeCommand)
-	writeCommand.Flags().IntVar(&writeOpt.bucketCount, "b", 100, "bucket count like 30")
-	writeCommand.Flags().IntVar(&writeOpt.size, "n", 1, "bucket size like 100")
-	writeCommand.Flags().IntVar(&writeOpt.concurrencyLimit, "c", 1, "concurrency limit like 1")
-	writeCommand.Flags().BoolVar(&writeOpt.randomColumn, "random", false, "random column")
+	writeCommand.Flags().IntVarP(&writeOpt.bucketCount, "bucket", "b", 100, "bucket count like 30")
+	writeCommand.Flags().IntVarP(&writeOpt.size, "size", "n", 1, "bucket size like 100")
+	writeCommand.Flags().IntVarP(&writeOpt.concurrencyLimit, "concurrency", "c", 1, "concurrency limit like 1")
+	writeCommand.Flags().BoolVarP(&writeOpt.randomColumn, "random", "rdm", false, "random column")
 }
 
 func writeToClickhouse() error {
