@@ -93,10 +93,10 @@ The `read` command benchmarks the read performance of the ClickHouse database by
 The `write` command benchmarks the write performance of the ClickHouse database by writing data. You can specify the bucket count, bucket size, and concurrency limit for the benchmark.
 
 ```bash
-./clickhouse-benchmark write --b [bucket-count] --n [bucket-size] --c [concurrency-limit]
+./clickhouse-benchmark write -b [bucket-count] -n [size] -c [concurrency] -rdm [random]
 ```
 
-Note: Replace `[start-time]`, `[end-time]`, `[time-step]`, `[query]`, `[bucket-count]`, `[bucket-size]`, and `[concurrency-limit]` with the actual values for your benchmark.
+Note: Replace `[bucket-count]`, `[size]`, and `[concurrency]`, and `[random]` with the actual values for your benchmark.
 
 ## Make Usage
 
